@@ -1,0 +1,180 @@
+﻿@model IEnumerable<DatabaseFirstDemo.Models.Role>
+
+@{
+    ViewData["Title"] = "Index";
+    Layout = "~/Areas/Admin/Views/Shared/_Layout.cshtml";
+}
+
+<div class="row">
+    <div class="col-md-12">
+        <section class="panel">
+            <header class="panel-heading">
+                Danh mục Phân Quyền
+            </header>
+            <div class="panel-body">
+                <div class="col-md-12">
+                    <p>
+                        <a class="btn btn-danger create">Tạo mới</a>
+                    </p>
+                    @{
+                        if (TempData["AlertMessage"] != null)
+                        {
+                            <div id="alertBox" class="alert @TempData["Type"]">
+                                @TempData["AlertMessage"]
+                            </div>
+                        }
+                    }
+                    <table class="table table-striped">
+                        <thead>
+                            <tr>
+                                <th>
+                                    Loại Tin tức
+                                </th>
+                                <th>Hành động</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var item in Model)
+                            {
+                                <tr>
+                                    <td>
+                                        @Html.DisplayFor(modelItem => item.Name)
+                                    </td>
+                                    <td align="center">
+                                        <button class="btn btn-danger edit" data-name="@item.Name" data-id="@item.Id">Chỉnh sửa</button>&nbsp;
+                                        <a class="btn btn-danger delete" data-id="@item.Id">Xoá</a>
+                                    </td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </section>
+    </div>
+</div>
+<div id="modal-form" class="modal fade">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <button type="button" class="close" data-dismiss="modal">&times;</button>
+                <h4 class="modal-title"></h4>
+            </div>
+            <div class="modal-body">
+                <form id="form-news-Roles" method="post" action="#">
+                    <div class="form-group">
+                        <label for="Name">Tên loại tin tức</label>
+                        <input type="text" class="form-control" id="Name" name="Name" placeholder="Enter Name" required>
+                    </div>
+                    <input type="hidden" id="Id" name="Id" />
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-default" data-dismiss="modal">Close</button>
+                <button type="button" class="btn btn-primary" id="btn-save">Save</button>
+            </div>
+        </div>
+    </div>
+</div>
+<!-- Delete Modal -->
+<div class="modal fade" id="modal-delete" tabindex="-1" role="dialog" aria-labelledby="deleteModalLabel" aria-hidden="true">
+    <div class="modal-dialog" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <button type="button" class="close" data-dismiss="modal">&times;</button>
+                <h4 class="modal-title"></h4>
+            </div>
+            <div class="modal-body">
+                Bạn có chắc muốn xóa mục này?
+                <!-- Hidden field to store the id of the product -->
+                <input type="hidden" id="delete-id">
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-dismiss="modal">Hủy</button>
+                <button type="button" class="btn btn-danger" id="btn-delete">Xóa</button>
+            </div>
+        </div>
+    </div>
+</div>
+@section scripts{
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery-ajax-unobtrusive/3.2.6/jquery.unobtrusive-ajax.min.js"></script>
+    <script>
+
+        $(document).ready(function () {
+            // Create news category
+            $(document).on('click', '.create', function () {
+                $('#modal-form').modal('show');
+                $('.modal-title').text('Create News Role');
+                $('#btn-save').attr('data-action', '@Url.Action("Create", "Role")');
+                $('#form-news-Roles').trigger('reset');
+            });
+        });
+        // Save news category
+        $(document).on('click', '#btn-save', function () {
+            var form = $('#form-news-Roles');
+            $.post($(this).attr('data-action'), form.serialize())
+                .done(function (response) {
+                    if (response.success) {
+                        location.reload();
+                    } else {
+                        alert(response.message);
+                    }
+                })
+                .fail(function (error) {
+                    console.log(error);
+                });
+        });
+
+        // Edit product
+
+        $(document).on('click', '.edit', function () {
+            var id = $(this).data('id');
+            //var name = $(this).data('name');
+            $.get('@Url.Action("Edit", "Role")', { id: id })
+                .done(function (response) {
+                    if (response.success) {
+                        console.log(response.data.id);
+                        $('#modal-form').modal('show');
+                        $('.modal-title').text('Edit News Role');
+                        $('#btn-save').attr('data-action', '@Url.Action("Edit", "Role")');
+                        $('#Id').val(response.data.id);
+                        $('#Name').val(response.data.name);
+
+                    } else {
+                        alert(response.message);
+                    }
+                })
+                .fail(function (error) {
+                    console.log(error);
+                });
+        });
+
+        // Delete product
+        $(document).on('click', '.delete', function () {
+            var id = $(this).data('id');
+            $('#delete-id').val(id);
+            $('#modal-delete').modal('show');
+        });
+
+        // Delete product
+        $(document).on('click', '#btn-delete', function () {
+            var id = $('#delete-id').val();
+            $.post('@Url.Action("Delete", "Role")', { id: id })
+                .done(function (response) {
+                    if (response.success) {
+                        $('#modal-delete').modal('hide');
+                        location.reload();
+                    } else {
+                        alert(response.message);
+                    }
+                })
+                .fail(function (error) {
+                    console.log(error);
+                });
+        });
+        $(function () {
+            $('#alertBox').removeClass('hide');
+            $('#alertBox').delay(5000).slideUp(500);
+        })
+    </script>
+}
